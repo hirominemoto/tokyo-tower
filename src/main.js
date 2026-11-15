@@ -1057,10 +1057,10 @@ const CAPS = [
   [12.3, 18.2, '手を合わせる人の、うしろにも。'],
   [20.3, 26.2, 'いつものベンチに、いつもの塔。'],
   [28.3, 34.2, 'のれんをくぐる、いつもの夜。'],
-  [39.95, 41.75, '缶ビールひとつ。', 'left', 0.45],
-  [42.05, 43.9, 'ただいま…', 'left', 0.45],
-  [45.6, 49.8, '近くで見れば、暮らしのとなり。'],
-  [50.3, 54.6, '遠くから見れば、都会のまんなか。'],
+  [39.95, 41.55, '缶ビールひとつ。', 'left', 0.45],
+  [41.95, 44.55, 'ただいま…', 'left', 0.6],
+  [46.3, 50.1, '近くで見れば、暮らしのとなり。'],
+  [50.6, 54.7, '遠くから見れば、都会のまんなか。'],
 ];
 const capEl = document.getElementById('cap');
 const titleEl = document.getElementById('title');
@@ -1088,7 +1088,7 @@ function guestState(t) {
 }
 
 const CLOSE = { x: -0.3, y: 1.62, z: 189.3 };
-const POV0 = 39.5;                      // the close-up of her hand runs POV0..44
+const POV0 = 39.5, POV1 = 45;            // the close-up of her hand runs POV0..POV1
 const TOWER_POINT = V(0, 215, 0);   // where fingers point: just under the top deck
 function camAt(t) {
   const pos = V(0, 0, 0), look = V(0, 0, 0); let fov = 50;
@@ -1117,12 +1117,12 @@ function camAt(t) {
     const drift = Math.max(0, t - 38.7) * 0.06;
     const backP = alleyToWorld(-0.74, 1.52, 187.75 - drift), backL = alleyToWorld(-0.9, 1.92, 180);
     pos.copy(wideP).lerp(backP, m); look.copy(wideL).lerp(backL, m); fov = lerp(52, 46, m);
-  } else if (t < 44) {
+  } else if (t < POV1) {
     pos.copy(alleyToWorld(-0.82, 1.5, 185.82 - 0.05 * (t - POV0)));
     const k = sstep(POV0 + 0.3, POV0 + 2.0, t);
     look.set(0, lerp(18, 66, k), 0); fov = 50;
   } else {
-    const u = clamp((t - 44) / 11.5, 0, 1); const drift = Math.max(0, t - 55.5);
+    const u = clamp((t - POV1) / (55.5 - POV1), 0, 1); const drift = Math.max(0, t - 55.5);
     const ey = Math.pow(sstep(0, 1, u), 1.12), ez = Math.pow(sstep(0, 1, u), 1.3);
     pos.copy(alleyToWorld(lerp(CLOSE.x, 0, sstep(0, 0.3, u)), lerp(CLOSE.y, 225, ey) + drift * 1.5, lerp(CLOSE.z - 0.04, 450, ez) + drift * 4));
     look.set(0, lerp(96, 112, sstep(0, 0.45, u)), 0); fov = lerp(48, 42, sstep(0, 0.5, u));
@@ -1135,7 +1135,7 @@ function walkerPhase(dist, s) { return dist / (0.72 * s) * Math.PI; }
 function update(t) {
   const c = camAt(t); camera.position.copy(c.pos); camera.lookAt(c.look); camera.fov = c.fov;
   if (window.__cam) { const cv = (a) => window.__cam.alley ? alleyToWorld(a[0], a[1], a[2]) : V(a[0], a[1], a[2]); camera.position.copy(cv(window.__cam.pos)); camera.lookAt(cv(window.__cam.look)); camera.fov = window.__cam.fov || 40; }
-  camera.near = (window.__cam || (t >= POV0 && t < 44)) ? 0.04 : clamp(c.pos.y * 0.02, 0.25, 4); camera.updateProjectionMatrix();
+  camera.near = (window.__cam || (t >= POV0 && t < POV1)) ? 0.04 : clamp(c.pos.y * 0.02, 0.25, 4); camera.updateProjectionMatrix();
   sky.position.copy(camera.position);
   skyU.uDark.value = sstep(0, 44, t) * 0.5;
 
@@ -1203,14 +1203,14 @@ function update(t) {
     benchB.torsoG.rotation.z = 0.14 * sstep(22.4, 23.6, t);
     benchB.arms[1].sh.rotation.x = -0.6; benchB.arms[1].sh.rotation.z = 0.35;
     const dw = lerp(-11, 11, tt / 8);
-    const dp = S4.at(11.5, dw); placePerson(dogWalker, dp.x, dp.z, S4.head + Math.PI / 2); dogWalker.walk(walkerPhase(2.75 * tt, 1)); dogWalker.arms[0].sh.rotation.x = -0.6;
-    const dgp = S4.at(11.0, dw + 1.6); dog.position.set(dgp.x, 0, dgp.z); dog.rotation.y = S4.head + Math.PI / 2; poseDog(dog, t * 11);
+    const dp = S4.at(11.5, dw); placePerson(dogWalker, dp.x, dp.z, S4.head - Math.PI / 2); dogWalker.walk(walkerPhase(2.75 * tt, 1)); dogWalker.arms[0].sh.rotation.x = -0.6;
+    const dgp = S4.at(11.0, dw + 1.6); dog.position.set(dgp.x, 0, dgp.z); dog.rotation.y = S4.head - Math.PI / 2; poseDog(dog, t * 11);
     const hand = new THREE.Vector3(); dogWalker.root.updateMatrixWorld(true); dogWalker.arms[0].hand.getWorldPosition(hand);
     const collar = dog.localToWorld(V(0, 0.48, 0.25));
     leashG.setFromPoints([hand, collar]);
     const jw = lerp(18, -18, tt / 8);
-    const jp = S4.at(22, jw); placePerson(jogger, jp.x, jp.z, S4.head - Math.PI / 2); jogger.walk(walkerPhase(4.5 * tt, 1) * 0.75, 1.5); jogger.arms[0].el.rotation.x = jogger.arms[1].el.rotation.x = -1.3;
-    for (const w of parkWalkers) { const lat = w.off + w.dir * w.v * tt; const p = S4.at(w.fw, lat); placePerson(w.p, p.x, p.z, S4.head + w.dir * Math.PI / 2); w.p.walk(walkerPhase(w.v * tt, w.p.s)); }
+    const jp = S4.at(22, jw); placePerson(jogger, jp.x, jp.z, S4.head + Math.PI / 2); jogger.walk(walkerPhase(4.5 * tt, 1) * 0.75, 1.5); jogger.arms[0].el.rotation.x = jogger.arms[1].el.rotation.x = -1.3;
+    for (const w of parkWalkers) { const lat = w.off + w.dir * w.v * tt; const p = S4.at(w.fw, lat); placePerson(w.p, p.x, p.z, S4.head - w.dir * Math.PI / 2); w.p.walk(walkerPhase(w.v * tt, w.p.s)); }
   }
 
   // ---- 4/5/6 路地 ----
@@ -1258,11 +1258,11 @@ function update(t) {
   }
 
   // POV prop (Gogo's close-up: the can comes up into view beside the tower)
-  pov.visible = t >= POV0 && t < 44;
+  pov.visible = t >= POV0 && t < POV1;
   if (pov.visible) {
     const lift = easeIO(clamp((t - (POV0 + 0.35)) / 1.15, 0, 1));
     const sway = Math.sin(t * 1.7) * 0.004;
-    const show = sstep(POV0 + 1.5, POV0 + 2.4, t) * (1 - sstep(43.4, 44, t) * 0.3);
+    const show = sstep(POV0 + 1.5, POV0 + 2.4, t) * (1 - sstep(POV1 - 0.6, POV1, t) * 0.3);
     povCan.position.set(lerp(0.105, 0.074, lift), lerp(-0.34, -0.046, lift) + sway + show * 0.006, lerp(-0.24, -0.185, lift));
     povCan.rotation.set(lerp(0.35, 0.1, lift) + show * 0.06, lerp(0.25, -0.12, lift), lerp(-0.05, -0.17, lift) - show * 0.03);
   }
@@ -1276,7 +1276,7 @@ function update(t) {
   let f = 1 - sstep(0, 1.3, t);
   for (const b of [11, 19, 27, 35]) f = Math.max(f, 1 - sstep(0, 0.45, Math.abs(t - b)));
   // into her eyes and back out again: a short blink instead of a hard cut
-  for (const b of [POV0, 44]) f = Math.max(f, 1 - sstep(0, 0.32, Math.abs(t - b)));
+  for (const b of [POV0, POV1]) f = Math.max(f, 1 - sstep(0, 0.32, Math.abs(t - b)));
   f = Math.max(f, sstep(58.6, 60, t) * 0.55);
   fadeEl.style.opacity = f.toFixed(3);
   let cap = null, ca = 0, side = '';

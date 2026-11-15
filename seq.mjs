@@ -9,7 +9,7 @@ await p.goto('file://' + process.cwd() + '/' + html + '?render&ss=' + ss, { wait
 await p.waitForFunction(() => window.__ready === true, null, {timeout: 120000});
 for (const [t0, t1, name] of segs) {
   fs.mkdirSync('frames/' + name, { recursive: true }); const s = Date.now(); let n = 0;
-  for (let f = Math.round(t0 * 30); f < Math.round(t1 * 30); f++, n++) { await p.evaluate((t) => window.__renderAt(t), f / 30); await p.screenshot({ path: `frames/${name}/${String(f).padStart(5, '0')}.jpg`, type: 'jpeg', quality: 95 }); }
+  for (let f = Math.round(t0 * 30); f < Math.round(t1 * 30); f++, n++) { const out = `frames/${name}/${String(f).padStart(5, '0')}.jpg`; if (fs.existsSync(out)) continue; await p.evaluate((t) => window.__renderAt(t), f / 30); await p.screenshot({ path: out + '.tmp.jpg', type: 'jpeg', quality: 95 }); fs.renameSync(out + '.tmp.jpg', out); }
   console.log(name, n, ((Date.now() - s) / 1000).toFixed(0) + 's');
 }
 await b.close();
